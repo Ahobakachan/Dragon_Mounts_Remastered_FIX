@@ -148,6 +148,12 @@ public class DragonContainerMenu extends AbstractContainerMenu {
             itemstack = itemstack1.copy();
             int i = this.dragon.hasChest() ? this.dragonContainer.getContainerSize() : 3;
             if (pIndex < i) {
+                // Equipment slots (saddle/armor/chest) must never be moved by a
+                // generic shift-click/sorter operation. The chest inventory starts
+                // at slot 3, so only the actual storage slots are transferred.
+                if (pIndex < 3) {
+                    return ItemStack.EMPTY;
+                }
                 if (!this.moveItemStackTo(itemstack1, i, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
@@ -174,7 +180,8 @@ public class DragonContainerMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(itemstack1, j, k, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (!this.moveItemStackTo(itemstack1, j, j, false)) {
+                } else {
+                    // No valid destination exists. Do not touch the source stack.
                     return ItemStack.EMPTY;
                 }
 
