@@ -3,6 +3,7 @@ package dmr.DragonMounts.network;
 import io.netty.buffer.ByteBuf;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.Utf8String;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.api.distmarker.Dist;
@@ -19,7 +20,7 @@ public class NetworkHandler {
     /**
      * Codec for UUID serialization.
      */
-    public static StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
+    public static StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
         public UUID decode(ByteBuf buffer) {
             return UUID.fromString(Utf8String.read(buffer, 32767));
         }
