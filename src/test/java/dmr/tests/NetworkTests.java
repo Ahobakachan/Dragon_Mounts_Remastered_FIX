@@ -5,9 +5,10 @@ import dmr.DragonMounts.network.packets.DragonStatePacket;
 import dmr.DragonMounts.registry.ModEntities;
 import io.netty.buffer.Unpooled;
 import net.minecraft.gametest.framework.GameTest;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.testframework.annotation.ForEachTest;
 import net.neoforged.testframework.annotation.TestHolder;
 import net.neoforged.testframework.gametest.EmptyTemplate;
@@ -48,7 +49,8 @@ public class NetworkTests {
         var packet = new DragonStatePacket(dragon.getId(), 1);
 
         // Test encoding and decoding
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(
+                Unpooled.buffer(), helper.getLevel().registryAccess(), ConnectionType.NEOFORGE);
         DragonStatePacket.STREAM_CODEC.encode(buffer, packet);
         DragonStatePacket decodedPacket = DragonStatePacket.STREAM_CODEC.decode(buffer);
 

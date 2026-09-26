@@ -19,15 +19,10 @@ public class NetworkHandler {
     /**
      * Codec for UUID serialization.
      */
-    public static StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
-        public UUID decode(RegistryFriendlyByteBuf buffer) {
-            return UUID.fromString(Utf8String.read(buffer, 32767));
-        }
-
-        public void encode(RegistryFriendlyByteBuf buffer, UUID uuid) {
-            Utf8String.write(buffer, uuid.toString(), 32767);
-        }
-    };
+    public static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC =
+            StreamCodec.<RegistryFriendlyByteBuf, UUID>of(
+                    (buffer, uuid) -> Utf8String.write(buffer, uuid.toString(), 32767),
+                    buffer -> UUID.fromString(Utf8String.read(buffer, 32767)));
 
     /**
      * Handles client-side packet processing.
