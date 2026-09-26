@@ -205,7 +205,6 @@ public class TameableDragonEntity extends AbstractDragonEntity {
     }
 
     @Override
-    @Override
     public @Nullable Entity changeDimension(DimensionTransition transition) {
         var sourceLevel = this.level;
         var dragonUuid = getDragonUUID();
