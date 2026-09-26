@@ -23,6 +23,7 @@ public final class DragonRidingClientHandler {
 
     private static CameraType previousCameraType;
     private static boolean forcedThirdPerson;
+    private static boolean wasRidingDragon;
 
     private DragonRidingClientHandler() {}
 
@@ -33,12 +34,15 @@ public final class DragonRidingClientHandler {
 
         if (player == null) {
             restoreCamera(minecraft);
+            wasRidingDragon = false;
             return;
         }
 
         boolean ridingDragon = player.getVehicle() instanceof TameableDragonEntity;
 
         if (ridingDragon) {
+            wasRidingDragon = true;
+
             if (!forcedThirdPerson) {
                 previousCameraType = minecraft.options.getCameraType();
                 minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
@@ -47,17 +51,17 @@ public final class DragonRidingClientHandler {
             return;
         }
 
-        if (forcedThirdPerson) {
-            restoreCamera(minecraft);
-        }
+        if (wasRidingDragon) {
+            wasRidingDragon = false;
 
-        // The server also clears the synced flag, but clear it locally as well
-        // so a stale client-side sneak state cannot block right-click interaction.
-        if (player.isShiftKeyDown()) {
+            // The server also clears the synced flag, but clear it locally as well
+            // so a stale client-side sneak state cannot block right-click interaction.
             player.setShiftKeyDown(false);
-        }
-        if (player.getPose() == Pose.CROUCHING) {
-            player.setPose(Pose.STANDING);
+            if (player.getPose() == Pose.CROUCHING) {
+                player.setPose(Pose.STANDING);
+            }
+
+            restoreCamera(minecraft);
         }
     }
 
