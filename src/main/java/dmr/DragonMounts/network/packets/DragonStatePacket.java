@@ -3,9 +3,7 @@ package dmr.DragonMounts.network.packets;
 import dmr.DragonMounts.network.AbstractMessage;
 import dmr.DragonMounts.server.entity.TameableDragonEntity;
 import java.util.Optional;
-import lombok.Getter;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,18 +11,18 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class DragonStatePacket extends AbstractMessage<DragonStatePacket> {
-    public static final StreamCodec<FriendlyByteBuf, DragonStatePacket> STREAM_CODEC = StreamCodec.composite(
+    public static final StreamCodec<RegistryFriendlyByteBuf, DragonStatePacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT,
             DragonStatePacket::getEntityId,
             ByteBufCodecs.INT,
             DragonStatePacket::getState,
             DragonStatePacket::new);
 
-    @Getter
     private final int entityId;
-
-    @Getter
     private final int state;
+
+    public int getEntityId() { return entityId; }
+    public int getState() { return state; }
 
     /**
      * Empty constructor for NetworkHandler.
