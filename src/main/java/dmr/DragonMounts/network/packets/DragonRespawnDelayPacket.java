@@ -2,8 +2,6 @@ package dmr.DragonMounts.network.packets;
 
 import dmr.DragonMounts.network.AbstractMessage;
 import dmr.DragonMounts.registry.ModCapabilities;
-import lombok.Getter;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,18 +9,18 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class DragonRespawnDelayPacket extends AbstractMessage<DragonRespawnDelayPacket> {
-    private static final StreamCodec<FriendlyByteBuf, DragonRespawnDelayPacket> STREAM_CODEC = StreamCodec.composite(
+    private static final StreamCodec<RegistryFriendlyByteBuf, DragonRespawnDelayPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT,
             DragonRespawnDelayPacket::getIndex,
             ByteBufCodecs.INT,
             DragonRespawnDelayPacket::getDelay,
             DragonRespawnDelayPacket::new);
 
-    @Getter
     private final int index;
-
-    @Getter
     private final int delay;
+
+    public int getIndex() { return index; }
+    public int getDelay() { return delay; }
 
     /**
      * Empty constructor for NetworkHandler.
