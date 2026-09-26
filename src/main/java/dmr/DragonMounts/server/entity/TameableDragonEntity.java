@@ -206,6 +206,17 @@ public class TameableDragonEntity extends AbstractDragonEntity {
 
     @Override
     public @Nullable Entity changeDimension(DimensionTransition transition) {
+        // Dragon inventories are stored in per-dimension SavedData. Never move the
+        // DragonInventory object itself between dimensions: it keeps the old
+        // dimension's registry access and can therefore be serialized incorrectly.
+        // Snapshot the inventory before vanilla performs the entity transfer and
+        // recreate it with the destination dimension's registry access afterwards.
+        var sourceLevel = this.level;
+        var dragonUuid = getDragonUUID();
+        var sourceData = DragonWorldDataManager.getInstance(sourceLevel);
+        var sourceInventory = sourceData.dragonInventories.get(dragonUuid);
+        var inventorySnapshot = sourceInventory != null ? sourceInventory.writeNBT() : null;
+
         var entity = super.changeDimension(transition);
 
         if (entity instanceof TameableDragonEntity dragon) {
@@ -213,12 +224,12 @@ public class TameableDragonEntity extends AbstractDragonEntity {
 
             DMR.LOGGER.debug(
                     "Changing dimension of dragon {} to {}",
-                    getDragonUUID(),
+                    dragonUuid,
                     transition.newLevel().dimension().location());
 
             if (owner instanceof Player player) {
                 var handler = PlayerStateUtils.getHandler(player);
-                var index = DragonWhistleHandler.getDragonSummonIndex(player, getDragonUUID());
+                var index = DragonWhistleHandler.getDragonSummonIndex(player, dragonUuid);
                 handler.setDragonInstance(index, new DragonInstance(dragon));
 
                 // Update lastSummon to new UUID to prevent despawns
@@ -228,12 +239,21 @@ public class TameableDragonEntity extends AbstractDragonEntity {
                 }
             }
 
-            var worldData1 = DragonWorldDataManager.getInstance(level);
-            var worldData2 = DragonWorldDataManager.getInstance(transition.newLevel());
+            var destinationData = DragonWorldDataManager.getInstance(transition.newLevel());
 
-            // Transfer the dragon inventory
-            worldData2.dragonInventories.put(getDragonUUID(), worldData1.dragonInventories.get(getDragonUUID()));
-            worldData1.dragonInventories.remove(getDragonUUID());
+            if (inventorySnapshot != null) {
+                var destinationInventory = new DragonInventory(transition.newLevel());
+                destinationInventory.readNBT(inventorySnapshot);
+                destinationData.dragonInventories.put(dragonUuid, destinationInventory);
+                destinationData.setDirty();
+            }
+
+            // Only remove the source copy after the destination copy has been created.
+            // This makes the transfer atomic from the SavedData point of view and
+            // prevents the inventory from being lost if the destination is loaded later.
+            if (sourceData.dragonInventories.remove(dragonUuid) != null) {
+                sourceData.setDirty();
+            }
 
             return dragon;
         }
