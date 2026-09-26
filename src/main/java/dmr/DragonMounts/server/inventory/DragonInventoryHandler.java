@@ -92,9 +92,10 @@ public class DragonInventoryHandler {
 
     public static class DragonInventory implements NBTInterface, ContainerListener {
 
-        @Getter
-        @Setter
-        boolean isDirty = false;
+        private boolean isDirty = false;
+
+        public boolean isDirty() { return isDirty; }
+        public void setDirty(boolean dirty) { this.isDirty = dirty; }
 
         public DragonInventory(Level level) {
             this.registryAccess = level.registryAccess();
