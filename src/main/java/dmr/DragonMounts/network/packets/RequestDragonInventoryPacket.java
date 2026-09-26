@@ -7,7 +7,6 @@ import dmr.DragonMounts.server.inventory.DragonInventoryHandler.DragonInventory;
 import java.util.UUID;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class RequestDragonInventoryPacket extends AbstractMessage<RequestDragonInventoryPacket> {
-    private static final StreamCodec<FriendlyByteBuf, RequestDragonInventoryPacket> STREAM_CODEC =
+    private static final StreamCodec<RegistryFriendlyByteBuf, RequestDragonInventoryPacket> STREAM_CODEC =
             StreamCodec.composite(
                     NetworkHandler.UUID_CODEC,
                     RequestDragonInventoryPacket::getId,

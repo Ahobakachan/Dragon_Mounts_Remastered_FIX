@@ -5,7 +5,6 @@ import dmr.DragonMounts.network.NetworkHandler;
 import dmr.DragonMounts.server.inventory.DragonInventoryHandler;
 import java.util.UUID;
 import lombok.Getter;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,8 +12,9 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class ClearDragonInventoryPacket extends AbstractMessage<ClearDragonInventoryPacket> {
-    private static final StreamCodec<FriendlyByteBuf, ClearDragonInventoryPacket> STREAM_CODEC = StreamCodec.composite(
-            NetworkHandler.UUID_CODEC, ClearDragonInventoryPacket::getId, ClearDragonInventoryPacket::new);
+    private static final StreamCodec<RegistryFriendlyByteBuf, ClearDragonInventoryPacket> STREAM_CODEC =
+            StreamCodec.composite(
+                    NetworkHandler.UUID_CODEC, ClearDragonInventoryPacket::getId, ClearDragonInventoryPacket::new);
 
     @Getter
     private final UUID id;
