@@ -204,6 +204,26 @@ public class TameableDragonEntity extends AbstractDragonEntity {
         }
     }
 
+    /**
+     * Keeps the rider slightly lower on the dragon's saddle.
+     *
+     * This avoids placing a player's head directly inside a low ceiling or
+     * against a nearby block during the first riding tick, which can cause
+     * an immediate collision/dismount at the boundary.
+     */
+    private static final double RIDER_Y_OFFSET = -0.35D;
+
+    @Override
+    public Vec3 getPassengerRidingPosition(Entity passenger) {
+        Vec3 position = super.getPassengerRidingPosition(passenger);
+
+        if (passenger instanceof Player) {
+            return position.add(0.0D, RIDER_Y_OFFSET, 0.0D);
+        }
+
+        return position;
+    }
+
     @Override
     public @Nullable Entity changeDimension(DimensionTransition transition) {
         var sourceLevel = this.level;
