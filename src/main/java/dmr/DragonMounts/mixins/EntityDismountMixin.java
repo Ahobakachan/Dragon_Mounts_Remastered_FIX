@@ -7,6 +7,7 @@ import dmr.DragonMounts.registry.ModMemoryModuleTypes;
 import dmr.DragonMounts.server.entity.TameableDragonEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,6 +22,12 @@ public class EntityDismountMixin {
     public void stopRiding(CallbackInfo ci) {
         if (((Entity) (Object) this) instanceof Player player) {
             if (player.getControlledVehicle() instanceof TameableDragonEntity dragon) {
+                // A DMR dismount is initiated by the sneak key. Clear the synced
+                // sneak/pose state immediately so the client cannot remain stuck
+                // in the crouching interaction state after leaving the dragon.
+                player.setShiftKeyDown(false);
+                player.setPose(Pose.STANDING);
+
                 DragonOwnerCapability cap = player.getData(ModCapabilities.PLAYER_CAPABILITY);
                 cap.shouldDismount = false;
                 dragon.updateOwnerData();
