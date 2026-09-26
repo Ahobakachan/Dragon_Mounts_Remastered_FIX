@@ -23,6 +23,12 @@ public class ClientConfig {
     @SyncedConfig
     public static boolean DOUBLE_PRESS_DISMOUNT = true;
 
+    @Config(
+            key = "separate_dismount_key",
+            comment =
+                    "Use the dedicated Dismount key instead of double-pressing the sneak key to dismount. When enabled, pressing sneak only controls dragon descent and never dismounts.")
+    public static boolean SEPARATE_DISMOUNT_KEY = false;
+
     @Config(key = "alternate_attack_key", comment = "Should dragon attacks require holding down the dragon attack key?")
     public static boolean USE_ALTERNATE_ATTACK_KEY = false;
 
