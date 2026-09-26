@@ -130,6 +130,20 @@ public class KeyInputHandler {
             var player = Minecraft.getInstance().player;
 
             if (player.getControlledVehicle() instanceof TameableDragonEntity) {
+                // In separate-key mode, sneak is reserved exclusively for dragon
+                // descent. It must never trigger the legacy double-shift dismount.
+                if (ClientConfig.SEPARATE_DISMOUNT_KEY) {
+                    wasShiftDown = false;
+                    lastUnshift = null;
+
+                    if (DISMOUNT_KEY.consumeClick()) {
+                        PacketDistributor.sendToServer(new DismountDragonPacket(player.getId(), true));
+                        return;
+                    }
+
+                    return;
+                }
+
                 if (Minecraft.getInstance().options.keyShift.consumeClick()) {
                     wasShiftDown = true;
 
