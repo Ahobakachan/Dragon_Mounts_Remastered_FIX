@@ -260,14 +260,15 @@ public class DragonEggTests {
             helper.succeedWhen(() -> {
                 helper.assertBlockNotPresent(ModBlocks.DRAGON_EGG_BLOCK.get(), DMRTestConstants.TEST_POS);
                 helper.assertEntityPresent(ModEntities.DRAGON_ENTITY.get());
-                helper.assertEntityData(DMRTestConstants.TEST_POS, ModEntities.DRAGON_ENTITY.get(),
+                helper.assertEntityData(
+                        DMRTestConstants.TEST_POS,
+                        ModEntities.DRAGON_ENTITY.get(),
                         TameableDragonEntity::getHomeDimension,
                         helper.getLevel().dimension().location().toString());
             });
         } else {
             helper.fail("Block entity is not an instance of DMREggBlockEntity");
         }
-
     }
 
     /**
@@ -337,7 +338,6 @@ public class DragonEggTests {
         } else {
             helper.fail("Block entity is not an instance of DMREggBlockEntity");
         }
-
     }
 
     /**

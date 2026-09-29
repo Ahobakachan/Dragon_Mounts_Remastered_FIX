@@ -3,7 +3,6 @@ package dmr.tests;
 import dmr.DMRTestConstants;
 import dmr.DragonMounts.common.capability.DragonOwnerCapability;
 import dmr.DragonMounts.common.handlers.DragonWhistleHandler;
-import dmr.DragonMounts.common.handlers.DragonWhistleHandler.DragonInstance;
 import dmr.DragonMounts.registry.DragonBreedsRegistry;
 import dmr.DragonMounts.registry.ModBlocks;
 import dmr.DragonMounts.registry.ModEntities;
@@ -12,9 +11,7 @@ import dmr.DragonMounts.server.blockentities.DMREggBlockEntity;
 import dmr.DragonMounts.server.entity.TameableDragonEntity;
 import dmr.DragonMounts.server.items.DragonWhistleItem;
 import dmr.DragonMounts.util.PlayerStateUtils;
-import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -40,17 +37,24 @@ public class DragonDimensionTests {
         var dragon = ModEntities.DRAGON_ENTITY.get().create(nether);
         dragon.setBreed(DragonBreedsRegistry.getDefault());
         dragon.setPos(0, 100, 0);
-        nether.addFreshEntity(dragon);
+        helper.assertTrue(nether.addFreshEntity(dragon), "Test dragon must spawn in Nether");
         dragon.equipChest(new ItemStack(net.minecraft.world.item.Items.CHEST), net.minecraft.sounds.SoundSource.MASTER);
         dragon.getInventory().setItem(0, new ItemStack(ModItems.DRAGON_ARMOR.get()));
         DragonWhistleHandler.setDragon(player, dragon, 0);
         player.setItemInHand(InteractionHand.MAIN_HAND, whistle(0));
-        var before = dragon.getInventory().writeNBT().copy();
+        var source = dmr.DragonMounts.server.worlddata.DragonWorldDataManager.getInstance(nether);
+        var before =
+                source.dragonInventories.get(dragon.getDragonUUID()).writeNBT().copy();
         var destination = dmr.DragonMounts.server.worlddata.DragonWorldDataManager.getInstance(helper.getLevel());
         helper.assertTrue(!DragonWhistleHandler.callDragon(player), "Nether dragon must not be summoned in Overworld");
-        helper.assertTrue(before.equals(dragon.getInventory().writeNBT()), "Blocked call must retain all inventory items");
-        helper.assertTrue(!destination.dragonInventories.containsKey(dragon.getDragonUUID()), "Blocked call must not transfer inventory");
-        helper.assertTrue(nether.getEntity(dragon.getUUID()) == dragon, "Blocked call must keep source entity");
+        helper.assertTrue(
+                before.equals(
+                        source.dragonInventories.get(dragon.getDragonUUID()).writeNBT()),
+                "Blocked call must retain all inventory items");
+        helper.assertTrue(
+                !destination.dragonInventories.containsKey(dragon.getDragonUUID()),
+                "Blocked call must not transfer inventory");
+        helper.assertTrue(!dragon.isRemoved() && dragon.level() == nether, "Blocked call must keep source entity");
         dragon.discard();
         helper.succeed();
     }
@@ -58,7 +62,9 @@ public class DragonDimensionTests {
     private static ItemStack whistle(int index) {
         return ModItems.DRAGON_WHISTLES.values().stream()
                 .filter(item -> ((DragonWhistleItem) item.get()).getColor().getId() == index)
-                .map(item -> new ItemStack(item.get())).findFirst().orElseThrow();
+                .map(item -> new ItemStack(item.get()))
+                .findFirst()
+                .orElseThrow();
     }
 
     @EmptyTemplate(floor = true)
@@ -71,8 +77,9 @@ public class DragonDimensionTests {
         var egg = (DMREggBlockEntity) level.getBlockEntity(pos);
         egg.setBreed(DragonBreedsRegistry.getDefault());
         egg.hatch(level, pos);
-        var baby = level.getEntitiesOfClass(TameableDragonEntity.class, new AABB(pos).inflate(1))
-                .stream().findFirst().orElseThrow();
+        var baby = level.getEntitiesOfClass(TameableDragonEntity.class, new AABB(pos).inflate(1)).stream()
+                .findFirst()
+                .orElseThrow();
         var home = level.dimension().location().toString();
         helper.assertTrue(home.equals(baby.getHomeDimension()), "Hatching must persist home before any binding");
         var nether = level.getServer().getLevel(Level.NETHER);
@@ -82,8 +89,11 @@ public class DragonDimensionTests {
         var player = helper.makeTickingMockServerPlayerInLevel(GameType.DEFAULT_MODE);
         DragonWhistleHandler.setDragon(player, moved, 0);
         var cap = PlayerStateUtils.getHandler(player);
-        helper.assertTrue(home.equals(cap.getDragonInstance(0).getHomeDimension()), "First binding must use hatch home");
-        helper.assertTrue("minecraft:the_nether".equals(cap.getDragonInstance(0).getDimension()), "Location must track destination");
+        helper.assertTrue(
+                home.equals(cap.getDragonInstance(0).getHomeDimension()), "First binding must use hatch home");
+        helper.assertTrue(
+                "minecraft:the_nether".equals(cap.getDragonInstance(0).getDimension()),
+                "Location must track destination");
         moved.discard();
         helper.succeed();
     }
@@ -108,7 +118,8 @@ public class DragonDimensionTests {
         var before = cap.serializeNBT(player.registryAccess()).copy();
         helper.assertTrue(DragonWhistleHandler.getDragonSummonIndex(player) == 0, "Selected whistle must win");
         helper.assertTrue(!DragonWhistleHandler.callDragon(player), "Foreign home must reject summon");
-        helper.assertTrue(before.equals(cap.serializeNBT(player.registryAccess())), "Rejected call must preserve saved data");
+        helper.assertTrue(
+                before.equals(cap.serializeNBT(player.registryAccess())), "Rejected call must preserve saved data");
         helper.assertTrue(foreign.isOrderedToSit() && local.isOrderedToSit(), "No other dragon may respond");
         helper.assertTrue(cap.lastCall == null, "Rejected call must not start cooldown");
         player.setItemInHand(InteractionHand.MAIN_HAND, whistle(1));
@@ -129,10 +140,17 @@ public class DragonDimensionTests {
         replacement.setBreed(DragonBreedsRegistry.getDefault());
         DragonWhistleHandler.setDragon(player, replacement, 0);
         var cap = PlayerStateUtils.getHandler(player);
-        helper.assertTrue(player.level().dimension().location().toString().equals(cap.getDragonInstance(0).getHomeDimension()),
+        helper.assertTrue(
+                player.level()
+                        .dimension()
+                        .location()
+                        .toString()
+                        .equals(cap.getDragonInstance(0).getHomeDimension()),
                 "Replacement must not inherit previous dragon home");
         DragonWhistleHandler.setDragon(player, oldDragon, 1);
-        helper.assertTrue("minecraft:the_nether".equals(cap.getDragonInstance(1).getHomeDimension()), "Rebinding must retain own home");
+        helper.assertTrue(
+                "minecraft:the_nether".equals(cap.getDragonInstance(1).getHomeDimension()),
+                "Rebinding must retain own home");
         helper.succeed();
     }
 
@@ -155,10 +173,12 @@ public class DragonDimensionTests {
         var restored = migrated.createDragonEntity(player, helper.getLevel(), 0);
         helper.assertTrue(restored != null, "Legacy dragon must restore");
         helper.assertTrue(dragon.getDragonUUID().equals(restored.getDragonUUID()), "Logical dragon UUID must survive");
-        helper.assertTrue("minecraft:the_nether".equals(restored.getHomeDimension()), "Legacy stored dimension must become home");
+        helper.assertTrue(
+                "minecraft:the_nether".equals(restored.getHomeDimension()), "Legacy stored dimension must become home");
         var reloaded = ModEntities.DRAGON_ENTITY.get().create(helper.getLevel());
         reloaded.load(restored.serializeNBT(helper.getLevel().registryAccess()));
-        helper.assertTrue("minecraft:the_nether".equals(reloaded.getHomeDimension()), "Entity save/reload must preserve home");
+        helper.assertTrue(
+                "minecraft:the_nether".equals(reloaded.getHomeDimension()), "Entity save/reload must preserve home");
         helper.succeed();
     }
 }

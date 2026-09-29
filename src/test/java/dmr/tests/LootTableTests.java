@@ -32,7 +32,8 @@ public class LootTableTests {
             var key = net.minecraft.resources.ResourceKey.create(
                     net.minecraft.core.registries.Registries.LOOT_TABLE,
                     ResourceLocation.parse("minecraft:chests/" + chest));
-            helper.assertTrue(registry.getLootTable(key).getPool("nether-egg") != null,
+            helper.assertTrue(
+                    registry.getLootTable(key).getPool("nether-egg") != null,
                     "Nether treasure must contain an egg pool: " + chest);
         }
         // Simulate loading optional Aether tables without linking any Aether classes.

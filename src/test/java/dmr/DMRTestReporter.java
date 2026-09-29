@@ -11,7 +11,8 @@ public class DMRTestReporter implements TestReporter {
 
     @Override
     public void onTestFailed(GameTestInfo testInfo) {
-        System.err.println("GameTest failed: " + testInfo.getTestName() + ": " + Util.describeError(testInfo.getError()));
+        System.err.println(
+                "GameTest failed: " + testInfo.getTestName() + ": " + Util.describeError(testInfo.getError()));
         testResults.put(testInfo.getTestName(), Util.describeError(testInfo.getError()));
     }
 

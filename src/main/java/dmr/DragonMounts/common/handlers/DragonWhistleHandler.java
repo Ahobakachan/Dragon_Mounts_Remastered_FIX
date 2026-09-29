@@ -47,8 +47,10 @@ public class DragonWhistleHandler {
     public static class DragonInstance implements NBTInterface {
 
         String dimension;
+
         @Setter
         String homeDimension;
+
         UUID entityId;
         UUID UUID;
 
