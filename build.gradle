@@ -186,6 +186,5 @@ tasks.named('spotlessCheck') {
     enabled = false
 }
 
-tasks.named('build') {
-    dependsOn tasks.named('spotlessApply')
-}
+// Formatting is an explicit developer task. Builds must compile the checked-in
+// sources without rewriting them (especially while compilation runs in parallel).

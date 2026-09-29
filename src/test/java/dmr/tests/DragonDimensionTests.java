@@ -31,6 +31,30 @@ import net.neoforged.testframework.gametest.ExtendedGameTestHelper;
 @PrefixGameTestTemplate(false)
 @ForEachTest(groups = "Dragon Dimensions")
 public class DragonDimensionTests {
+    @EmptyTemplate(floor = true)
+    @GameTest
+    @TestHolder
+    public static void blockedNetherSummonPreservesInventory(ExtendedGameTestHelper helper) {
+        var player = helper.makeTickingMockServerPlayerInLevel(GameType.DEFAULT_MODE);
+        var nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        var dragon = ModEntities.DRAGON_ENTITY.get().create(nether);
+        dragon.setBreed(DragonBreedsRegistry.getDefault());
+        dragon.setPos(0, 100, 0);
+        nether.addFreshEntity(dragon);
+        dragon.equipChest(new ItemStack(net.minecraft.world.item.Items.CHEST), net.minecraft.sounds.SoundSource.MASTER);
+        dragon.getInventory().setItem(0, new ItemStack(ModItems.DRAGON_ARMOR.get()));
+        DragonWhistleHandler.setDragon(player, dragon, 0);
+        player.setItemInHand(InteractionHand.MAIN_HAND, whistle(0));
+        var before = dragon.getInventory().writeNBT().copy();
+        var destination = dmr.DragonMounts.server.worlddata.DragonWorldDataManager.getInstance(helper.getLevel());
+        helper.assertTrue(!DragonWhistleHandler.callDragon(player), "Nether dragon must not be summoned in Overworld");
+        helper.assertTrue(before.equals(dragon.getInventory().writeNBT()), "Blocked call must retain all inventory items");
+        helper.assertTrue(!destination.dragonInventories.containsKey(dragon.getDragonUUID()), "Blocked call must not transfer inventory");
+        helper.assertTrue(nether.getEntity(dragon.getUUID()) == dragon, "Blocked call must keep source entity");
+        dragon.discard();
+        helper.succeed();
+    }
+
     private static ItemStack whistle(int index) {
         return ModItems.DRAGON_WHISTLES.values().stream()
                 .filter(item -> ((DragonWhistleItem) item.get()).getColor().getId() == index)
