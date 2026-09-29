@@ -106,7 +106,13 @@ public class DragonOwnerCapability implements INBTSerializable<CompoundTag> {
             PacketDistributor.sendToPlayer(spPlayer, new DragonNBTSync(index, nbtData));
         }
 
+        var previousInstance = dragonInstances.get(index);
         var instance = new DragonInstance(dragon);
+        if (previousInstance != null
+                && previousInstance.getHomeDimension() != null
+                && !previousInstance.getHomeDimension().isBlank()) {
+            instance.setHomeDimension(previousInstance.getHomeDimension());
+        }
         dragonInstances.put(index, instance);
 
         dragon.setWanderTarget(wanderPos);
