@@ -1,4 +1,4 @@
-name: Full Deployment
+name: PR GameTests
 
 on:
   pull_request:

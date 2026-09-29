@@ -14,6 +14,7 @@ import dmr.DragonMounts.server.worlddata.DragonWorldDataManager;
 import dmr.DragonMounts.util.PlayerStateUtils;
 import java.util.Optional;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -41,6 +42,29 @@ import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class TameableDragonEntity extends AbstractDragonEntity {
+
+    private String homeDimension;
+
+    /** Set once at hatching, or from a legacy whistle record before first use. */
+    public void initializeHomeDimension(String dimension) {
+        if (homeDimension == null || homeDimension.isBlank()) {
+            homeDimension = dimension;
+        }
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        if (homeDimension != null && !homeDimension.isBlank()) {
+            compound.putString("homeDimension", homeDimension);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag compound) {
+        homeDimension = compound.contains("homeDimension") ? compound.getString("homeDimension") : null;
+        super.readAdditionalSaveData(compound);
+    }
 
     public TameableDragonEntity(EntityType<? extends TamableAnimal> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -226,6 +250,15 @@ public class TameableDragonEntity extends AbstractDragonEntity {
 
     @Override
     public @Nullable Entity changeDimension(DimensionTransition transition) {
+        // Resolve legacy provenance before the entity is copied into the destination level.
+        if (getOwner() instanceof Player player) {
+            var handler = PlayerStateUtils.getHandler(player);
+            handler.dragonInstances.values().stream()
+                    .filter(instance -> getDragonUUID().equals(instance.getUUID()))
+                    .findFirst()
+                    .ifPresent(instance -> initializeHomeDimension(instance.getHomeDimension()));
+        }
+        initializeHomeDimension(level.dimension().location().toString());
         var sourceLevel = this.level;
         var dragonUuid = getDragonUUID();
         var sourceData = DragonWorldDataManager.getInstance(sourceLevel);
@@ -242,7 +275,7 @@ public class TameableDragonEntity extends AbstractDragonEntity {
                     getDragonUUID(),
                     transition.newLevel().dimension().location());
 
-            if (owner instanceof Player player) {
+            if (owner instanceof Player player && PlayerStateUtils.getHandler(player).isBoundToWhistle(this)) {
                 var handler = PlayerStateUtils.getHandler(player);
                 var index = DragonWhistleHandler.getDragonSummonIndex(player, getDragonUUID());
                 handler.setDragonInstance(index, new DragonInstance(dragon));

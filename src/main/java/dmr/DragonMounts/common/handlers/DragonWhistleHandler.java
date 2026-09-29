@@ -61,7 +61,8 @@ public class DragonWhistleHandler {
 
         public DragonInstance(TameableDragonEntity dragon) {
             this.dimension = dragon.level.dimension().location().toString();
-            this.homeDimension = this.dimension;
+            dragon.initializeHomeDimension(this.dimension);
+            this.homeDimension = dragon.getHomeDimension();
             this.entityId = dragon.getUUID();
             this.UUID = dragon.getDragonUUID();
         }
