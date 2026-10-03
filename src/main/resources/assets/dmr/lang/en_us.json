@@ -207,6 +207,8 @@
   "dmr.config.server.base_health.tooltip": "Base health of all dragons.",
   "dmr.config.server.base_speed": "Base Speed",
   "dmr.config.server.base_speed.tooltip": "Base movement speed for all dragons.",
+  "dmr.config.server.base_flying_speed": "Ridden Flying Speed",
+  "dmr.config.server.base_flying_speed.tooltip": "Flying speed multiplier while riding a dragon. Autonomous flight keeps its normal speed.",
   "dmr.config.server.dragon_egg_spawn_chance": "Dragon Egg Spawn Chance",
   "dmr.config.server.dragon_egg_spawn_chance.tooltip": "Multiplier for dragon egg spawn chances in loot sources. 0 disables spawning, 1 is default rate, 2 doubles the chance.",
   "dmr.config.server.dragon_history_size": "Dragon History Size",
