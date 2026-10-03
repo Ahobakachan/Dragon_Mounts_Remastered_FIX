@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - dmr-fixes
+      - feature/dimension-bound-dragons
+  pull_request:
+    branches:
+      - dmr-fixes
   workflow_dispatch:
 
 permissions:
@@ -30,6 +34,19 @@ jobs:
 
       - name: Build
         run: ./gradlew build --no-daemon
+
+      - name: Run game tests
+        run: ./gradlew runGameTestServer --no-daemon
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dragon-mounts-test-reports
+          path: |
+            run/test-results.md
+            run/logs/latest.log
+            build/reports/tests/
 
       - name: Upload JAR
         uses: actions/upload-artifact@v6

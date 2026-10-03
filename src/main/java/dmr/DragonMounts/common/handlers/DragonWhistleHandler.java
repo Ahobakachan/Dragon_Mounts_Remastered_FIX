@@ -24,6 +24,7 @@ import java.util.function.Function;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -46,25 +47,40 @@ public class DragonWhistleHandler {
     public static class DragonInstance implements NBTInterface {
 
         String dimension;
+
+        @Setter
+        String homeDimension;
+
         UUID entityId;
         UUID UUID;
 
         public DragonInstance(Level level, UUID entityId, UUID dragonUUID) {
             this.dimension = level.dimension().location().toString();
+            this.homeDimension = this.dimension;
             this.entityId = entityId;
             this.UUID = dragonUUID;
         }
 
         public DragonInstance(TameableDragonEntity dragon) {
             this.dimension = dragon.level.dimension().location().toString();
+            dragon.initializeHomeDimension(this.dimension);
+            this.homeDimension = dragon.getHomeDimension();
             this.entityId = dragon.getUUID();
             this.UUID = dragon.getDragonUUID();
+        }
+
+        public DragonInstance(String dimension, UUID entityId, UUID dragonUUID) {
+            this.dimension = dimension;
+            this.homeDimension = dimension;
+            this.entityId = entityId;
+            this.UUID = dragonUUID;
         }
 
         @Override
         public CompoundTag writeNBT() {
             CompoundTag tag = new CompoundTag();
             tag.putString("dimension", dimension);
+            tag.putString("homeDimension", homeDimension != null ? homeDimension : dimension);
             tag.putUUID("entityId", entityId);
             tag.putUUID("uuid", UUID);
             return tag;
@@ -74,6 +90,12 @@ public class DragonWhistleHandler {
         public void readNBT(CompoundTag base) {
             if (base.contains("dimension")) {
                 dimension = base.getString("dimension");
+            }
+            if (base.contains("homeDimension")) {
+                homeDimension = base.getString("homeDimension");
+            } else {
+                // Backward compatibility: old saves only stored the dragon's current dimension.
+                homeDimension = dimension;
             }
             if (base.contains("entityId")) {
                 entityId = base.getUUID("entityId");
@@ -175,6 +197,22 @@ public class DragonWhistleHandler {
             if (!player.level.isClientSide) {
                 player.displayClientMessage(
                         Component.translatable("dmr.dragon_call.nodragon").withStyle(ChatFormatting.RED), true);
+            }
+            return false;
+        }
+
+        var instance = handler.dragonInstances.get(index);
+        if (instance.getHomeDimension() == null || instance.getHomeDimension().isBlank()) {
+            instance.setHomeDimension(instance.getDimension());
+        }
+
+        var playerDimension = player.level.dimension().location().toString();
+        if (instance.getHomeDimension() != null && !instance.getHomeDimension().equals(playerDimension)) {
+            if (!player.level.isClientSide) {
+                player.displayClientMessage(
+                        Component.literal("This dragon belongs to another dimension and cannot be summoned here.")
+                                .withStyle(ChatFormatting.RED),
+                        true);
             }
             return false;
         }

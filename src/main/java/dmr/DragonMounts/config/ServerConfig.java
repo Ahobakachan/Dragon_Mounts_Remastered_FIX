@@ -81,7 +81,7 @@ public class ServerConfig {
     @RangeConstraint(min = 0)
     public static double BASE_WALKING_SPEED = 1.0;
 
-    @Config(key = "base_flying_speed", comment = "Base flying speed for all dragons.", category = "base_stats")
+    @Config(key = "base_flying_speed", comment = "Flying speed multiplier while riding a dragon. Autonomous flight keeps its normal speed.", category = "base_stats")
     @RangeConstraint(min = 0)
     public static double BASE_FLYING_SPEED = 1.0;
 

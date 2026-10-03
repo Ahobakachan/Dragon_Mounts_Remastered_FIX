@@ -14,6 +14,7 @@ import dmr.DragonMounts.server.worlddata.DragonWorldDataManager;
 import dmr.DragonMounts.util.PlayerStateUtils;
 import java.util.Optional;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -41,6 +42,29 @@ import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class TameableDragonEntity extends AbstractDragonEntity {
+
+    private String homeDimension;
+
+    /** Set once at hatching, or from a legacy whistle record before first use. */
+    public void initializeHomeDimension(String dimension) {
+        if (homeDimension == null || homeDimension.isBlank()) {
+            homeDimension = dimension;
+        }
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        if (homeDimension != null && !homeDimension.isBlank()) {
+            compound.putString("homeDimension", homeDimension);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag compound) {
+        homeDimension = compound.contains("homeDimension") ? compound.getString("homeDimension") : null;
+        super.readAdditionalSaveData(compound);
+    }
 
     public TameableDragonEntity(EntityType<? extends TamableAnimal> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -226,6 +250,15 @@ public class TameableDragonEntity extends AbstractDragonEntity {
 
     @Override
     public @Nullable Entity changeDimension(DimensionTransition transition) {
+        // Resolve legacy provenance before the entity is copied into the destination level.
+        if (getOwner() instanceof Player player) {
+            var handler = PlayerStateUtils.getHandler(player);
+            handler.dragonInstances.values().stream()
+                    .filter(instance -> getDragonUUID().equals(instance.getUUID()))
+                    .findFirst()
+                    .ifPresent(instance -> initializeHomeDimension(instance.getHomeDimension()));
+        }
+        initializeHomeDimension(level.dimension().location().toString());
         var sourceLevel = this.level;
         var dragonUuid = getDragonUUID();
         var sourceData = DragonWorldDataManager.getInstance(sourceLevel);
@@ -242,7 +275,8 @@ public class TameableDragonEntity extends AbstractDragonEntity {
                     getDragonUUID(),
                     transition.newLevel().dimension().location());
 
-            if (owner instanceof Player player) {
+            if (owner instanceof Player player
+                    && PlayerStateUtils.getHandler(player).isBoundToWhistle(this)) {
                 var handler = PlayerStateUtils.getHandler(player);
                 var index = DragonWhistleHandler.getDragonSummonIndex(player, getDragonUUID());
                 handler.setDragonInstance(index, new DragonInstance(dragon));
@@ -275,36 +309,36 @@ public class TameableDragonEntity extends AbstractDragonEntity {
         return null;
     }
 
-	@Override
-	public void travel(Vec3 travelVector) {
-		if (!this.isInWater() || !this.canDrownInFluidType(Fluids.WATER.getFluidType())) {
-			super.travel(travelVector);
-			return;
-		}
-		
-		double y0 = this.getY();
-		float waterFriction = this.isSprinting() ? 0.7F : 0.5F;
-		float inWaterSpeedModifier = (float) this.getAttributeValue(NeoForgeMod.SWIM_SPEED);
-		
-		this.moveRelative(inWaterSpeedModifier, travelVector);
-		this.move(MoverType.SELF, this.getDeltaMovement());
-		
-		Vec3 deltaVector = this.getDeltaMovement();
-		
-		if (this.horizontalCollision && this.onClimbable()) {
-			deltaVector = new Vec3(deltaVector.x, 0.2, deltaVector.z);
-		}
-		
-		Vec3 waterDragVector = new Vec3(
-				deltaVector.x * waterFriction * 0.6D,
-				deltaVector.y * getWaterSlowDown(),
-				deltaVector.z * waterFriction * 0.6D
-		);
-		
-		this.setDeltaMovement(waterDragVector);
-		Vec3 nextDeltaVector = this.getDeltaMovement();
-		if (this.horizontalCollision && this.isFree(nextDeltaVector.x, nextDeltaVector.y + 0.6D - this.getY() + y0, nextDeltaVector.z)) {
-			this.setDeltaMovement(nextDeltaVector.x, 0.3D, nextDeltaVector.z);
-		}
-	}
+    @Override
+    public void travel(Vec3 travelVector) {
+        if (!this.isInWater() || !this.canDrownInFluidType(Fluids.WATER.getFluidType())) {
+            super.travel(travelVector);
+            return;
+        }
+
+        double y0 = this.getY();
+        float waterFriction = this.isSprinting() ? 0.7F : 0.5F;
+        float inWaterSpeedModifier = (float) this.getAttributeValue(NeoForgeMod.SWIM_SPEED);
+
+        this.moveRelative(inWaterSpeedModifier, travelVector);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+
+        Vec3 deltaVector = this.getDeltaMovement();
+
+        if (this.horizontalCollision && this.onClimbable()) {
+            deltaVector = new Vec3(deltaVector.x, 0.2, deltaVector.z);
+        }
+
+        Vec3 waterDragVector = new Vec3(
+                deltaVector.x * waterFriction * 0.6D,
+                deltaVector.y * getWaterSlowDown(),
+                deltaVector.z * waterFriction * 0.6D);
+
+        this.setDeltaMovement(waterDragVector);
+        Vec3 nextDeltaVector = this.getDeltaMovement();
+        if (this.horizontalCollision
+                && this.isFree(nextDeltaVector.x, nextDeltaVector.y + 0.6D - this.getY() + y0, nextDeltaVector.z)) {
+            this.setDeltaMovement(nextDeltaVector.x, 0.3D, nextDeltaVector.z);
+        }
+    }
 }

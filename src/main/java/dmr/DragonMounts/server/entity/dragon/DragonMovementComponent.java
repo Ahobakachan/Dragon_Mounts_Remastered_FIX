@@ -2,6 +2,7 @@ package dmr.DragonMounts.server.entity.dragon;
 
 import static net.minecraft.world.entity.ai.attributes.Attributes.FLYING_SPEED;
 
+import dmr.DragonMounts.config.ServerConfig;
 import dmr.DragonMounts.registry.ModMemoryModuleTypes;
 import dmr.DragonMounts.server.ai.DragonBodyController;
 import dmr.DragonMounts.server.ai.DragonMoveController;
@@ -60,7 +61,8 @@ abstract class DragonMovementComponent extends DragonInventoryComponent {
      */
     @Override
     public float getFlyingSpeed() {
-        return (isSprinting() ? 1.25f : 1) * (float) getAttributeValue(FLYING_SPEED);
+        float riderModifier = getControllingPassenger() != null ? (float) ServerConfig.BASE_FLYING_SPEED : 1f;
+        return (isSprinting() ? 1.25f : 1) * riderModifier * (float) getAttributeValue(FLYING_SPEED);
     }
 
     /**

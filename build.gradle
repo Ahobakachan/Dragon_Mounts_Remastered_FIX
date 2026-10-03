@@ -18,6 +18,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 
 spotless {
+    // Keep formatting opt-in without pulling its child checks into `build`.
+    enforceCheck false
     java {
         target 'src/*/java/**/*.java'
         targetExclude 'src/generated/**/*.java', 'src/test/**/*Test.java'
@@ -182,10 +184,5 @@ idea {
     }
 }
 
-tasks.named('spotlessCheck') {
-    enabled = false
-}
-
-tasks.named('build') {
-    dependsOn tasks.named('spotlessApply')
-}
+// Formatting is an explicit developer task. Builds must compile the checked-in
+// sources without rewriting them (especially while compilation runs in parallel).

@@ -22,6 +22,30 @@ import net.neoforged.testframework.gametest.ExtendedGameTestHelper;
 @ForEachTest(groups = "Loot Tables")
 public class LootTableTests {
 
+    @EmptyTemplate
+    @GameTest
+    @TestHolder
+    public static void dimensionalTreasureEggs(ExtendedGameTestHelper helper) {
+        helper.makeTickingMockServerPlayerInLevel(GameType.DEFAULT_MODE);
+        var registry = helper.getLevel().getServer().reloadableRegistries();
+        for (String chest : List.of("bastion_treasure", "nether_bridge")) {
+            var key = net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.LOOT_TABLE,
+                    ResourceLocation.parse("minecraft:chests/" + chest));
+            helper.assertTrue(
+                    registry.getLootTable(key).getPool("nether-egg") != null,
+                    "Nether treasure must contain an egg pool: " + chest);
+        }
+        // Simulate loading optional Aether tables without linking any Aether classes.
+        for (String tier : List.of("bronze", "silver", "gold")) {
+            var id = ResourceLocation.parse("aether:chests/dungeon/" + tier + "/" + tier + "_dungeon_reward");
+            var table = LootTable.lootTable().build();
+            LootTableInject.onLootLoad(new net.neoforged.neoforge.event.LootTableLoadEvent(id, table));
+            helper.assertTrue(table.getPool("aether-egg") != null, "Aether reward egg pool missing: " + tier);
+        }
+        helper.succeed();
+    }
+
     /**
      * Tests the LootTableInject.injectEggLoot method.
      *

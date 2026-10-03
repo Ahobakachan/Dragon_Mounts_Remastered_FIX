@@ -56,6 +56,7 @@ public class DragonOwnerCapability implements INBTSerializable<CompoundTag> {
                 Entity entity = type.get().create(world);
                 if (entity instanceof TameableDragonEntity dragon) {
                     dragon.load(nbt);
+                    dragon.initializeHomeDimension(instance.getHomeDimension());
                     dragon.setUUID(UUID.randomUUID());
                     dragon.setDragonUUID(uuid);
 
@@ -89,6 +90,12 @@ public class DragonOwnerCapability implements INBTSerializable<CompoundTag> {
     }
 
     public void setDragonToWhistle(TameableDragonEntity dragon, int index) {
+        // Only migrate records belonging to this dragon, never the previous occupant of a whistle.
+        dragonInstances.values().stream()
+                .filter(instance -> dragon.getDragonUUID().equals(instance.getUUID()))
+                .findFirst()
+                .ifPresent(instance -> dragon.initializeHomeDimension(instance.getHomeDimension()));
+        dragon.initializeHomeDimension(dragon.level.dimension().location().toString());
         dragon.setTame(true, true);
         dragon.setOwnerUUID(playerInstance.getGameProfile().getId());
 
@@ -199,7 +206,11 @@ public class DragonOwnerCapability implements INBTSerializable<CompoundTag> {
                 var id = base.getUUID("dragonUUID_" + color.getId());
                 var instance = new DragonInstance(
                         getPlayerInstance() != null
-                                ? getPlayerInstance().level.dimension().toString()
+                                ? getPlayerInstance()
+                                        .level
+                                        .dimension()
+                                        .location()
+                                        .toString()
                                 : "minecraft:overworld",
                         UUID.randomUUID(),
                         id);

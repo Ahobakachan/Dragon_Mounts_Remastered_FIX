@@ -184,6 +184,7 @@ public class DMREggBlockEntity extends BlockEntity {
         baby.setPos(pos.getX(), pos.getY(), pos.getZ());
 
         baby.setHatched(true);
+        baby.initializeHomeDimension(level.dimension().location().toString());
 
         if (ServerConfig.ENABLE_RANDOM_STATS) {
             baby.setHatchedAttributes(this);
